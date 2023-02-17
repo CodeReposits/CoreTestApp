@@ -39,9 +39,18 @@ namespace CoreTestApp.Business.Services
                     if(num >= rValue.Value)
                     {
                         /// Brack the number into 1000's, 100's, 10's, 1's
-                        int ConvertToRoundedNum = GetRoundedNumber(num); 
+                        int ConvertToRoundedNum = GetRoundedNumber(num);
 
-                        result.Append(GetRomaLetter(ConvertToRoundedNum, rValue, _romanValues));
+                        var _letter = GetRomanLetter(ConvertToRoundedNum, rValue, _romanValues);
+
+                        //4 consicutive same numbers are not allowed in Roman numerics, so repalce with Next Keys.
+                        var count = _letter.ToCharArray().GroupBy(X => X).Where(Y => Y.Count() > 3).ToList().Count;
+                        if(count > 0)
+                        {
+                            _letter = GetRomanLetter(rValue, _romanValues);
+                        }
+
+                        result.Append(_letter);
 
                         num = num - ConvertToRoundedNum;
                     }
@@ -52,10 +61,9 @@ namespace CoreTestApp.Business.Services
         }
 
         // Building Roman numeric using given number
-        private string GetRomaLetter(int num, KeyValuePair<string,int> rValue, List<KeyValuePair<string, int>> _romanValues)
+        private string GetRomanLetter(int num, KeyValuePair<string,int> rValue, List<KeyValuePair<string, int>> _romanValues)
         {
-            string romanLetter = "";
-            int consicutiveKeys = 0;
+            string romanLetter = "";            
 
             var Keys = _romanValues.Select(x => x.Key).ToList<string>();
             
@@ -68,18 +76,22 @@ namespace CoreTestApp.Business.Services
 
                 romanLetter += rValue.Key;
                 num -= rValue.Value;
-
-                //4 consicutive same numbers are not allowed in Roman Letters, so repalce with Next Keys.
-                if (consicutiveKeys > 3)
-                {
-                    romanLetter = rValue.Key + Keys[Keys.IndexOf(rValue.Key) - 2];
-                }
-
-                consicutiveKeys++;
             }
             
             return romanLetter;
         }
+
+        private string GetRomanLetter(KeyValuePair<string, int> rValue, List<KeyValuePair<string, int>> _romanValues)
+        {
+            string romanLetter = "";
+
+            var Keys = _romanValues.Select(x => x.Key).ToList<string>();
+            rValue = _romanValues.FirstOrDefault(x => x.Key == Keys[Keys.IndexOf(rValue.Key) + 1]);
+            romanLetter = rValue.Key + Keys[Keys.IndexOf(rValue.Key) - 2];
+
+            return romanLetter;
+        }
+
 
         /// Bracking the number into either 1000's, 100's, 10's or 1's
         private int GetRoundedNumber(int num)
